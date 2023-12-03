@@ -1,5 +1,8 @@
 package boardgame;
 
+
+//Classe destinada a apenas a posição das peças
+
 public class Position {
 	private int row;
 	private int column;
@@ -23,6 +26,7 @@ public class Position {
 	public Position() {
 		
 	}
+	
 	
 	@Override
 	public String toString() {
