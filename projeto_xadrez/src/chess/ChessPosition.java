@@ -31,7 +31,7 @@ public class ChessPosition {
 	}
 	//Metodo para fazermos o 8 (maximo de casas do xadrez) menos a posição que inserimos, podemos calcular em char, pois char é considerado um int já que 'a' = 0, 'b' = 1...
 	protected static ChessPosition fromPosition(Position position) {
-		return new ChessPosition ((char)('a' - position.getColumn()), 8 - position.getRow());
+		return new ChessPosition ((char)('a' + position.getColumn()), 8 - position.getRow());
 	}
 	// Metodo inverso ao de cima
 	
