@@ -1,5 +1,9 @@
 package chess;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import boardgame.Board;
 import boardgame.Piece;
 import boardgame.Position;
@@ -7,14 +11,34 @@ import chess.pieces.King;
 import chess.pieces.Rook;
 
 public class ChessMatch {
+	
+	private int turn;
+	private Color currentPlayer;
 	private Board board;
+	private boolean check;
+	
+	private List<Piece> piecesOnTheBoard = new ArrayList<>();
+	private List<Piece> capturedPieces = new ArrayList<>();
 	
 	public ChessMatch() {
 		board = new Board(8, 8);
 		// Criado o board com rows e columns de 8 x 8 
+		
+		turn = 1;
+		currentPlayer = Color.WHITE;
 		initialSetup();
 		// programa irá executar o metodo inicial que começa na linha 29
 	}
+	
+	public int getTurn(){
+		return turn;
+	}
+	
+	public Color getCurrentPlayer() {
+		return currentPlayer;
+	}
+	
+	
 	
 	public ChessPiece[][] getPieces(){
 		ChessPiece[][] mat = new ChessPiece[board.getRows()][board.getColumns()];
@@ -28,13 +52,22 @@ public class ChessMatch {
 		
 	}
 	
+	public boolean [][] possibleMoves(ChessPosition sourcePosition){
+		Position position = sourcePosition.toPosition();
+		validateSourcePosition(position);
+		return board.piece(position).possibleMoves();
+	}
+	//Metodo para que quando o usuario selecionar a peça, apareça os movimentos disponiveis no tabuleiro
+	
 	public ChessPiece performChessMove(ChessPosition sourcePosition, ChessPosition targetPosition) {
 		Position source = sourcePosition.toPosition();
 		Position target = targetPosition.toPosition();
 		//O usuario irá inputar no console a posição da peça que ele quer mover, para onde ela irá, com isso iremos converter elas para a matriz
 		validateSourcePosition(source);
 		//com isso ele irá validar se essa posição existe, se existe ela irá validar e dar ok, se não, lançara uma exceção
+		validateTargetPosition(source, target);
 		Piece capturedPiece = makeMove(source, target);
+		nextTurn();
 		return (ChessPiece)capturedPiece;
 	}
 	
@@ -45,19 +78,73 @@ public class ChessMatch {
 		// Removemos a possivel peça que vamos capturar
 		board.placePiece(p, target);
 		//por fim executamos o metodo de colocar a peça
-		return capturedPiece;
+		
 		//e salvamos a peça que foi capturada
+		
+		if (capturedPiece != null) {
+			piecesOnTheBoard.remove(capturedPiece);
+			capturedPieces.add(capturedPiece);
+		}
+		//Fazemos o if para retirar uma peça do campo e colocar ela dentro da listas das capturadas para posteriormente imprimir no Ui quais estão capturadas
+		return capturedPiece;
 	}
 	
+	private void undoMove(Position source, Position target, Piece capturedPiece) {
+		Piece p  = board.removePiece(target);
+		board.placePiece(p, source);
+		
+		if(capturedPiece != null) {
+			board.placePiece(capturedPiece, target);
+			capturedPieces.remove(capturedPiece);
+			piecesOnTheBoard.add(capturedPiece);
+		}
+	}
+	//Metodo para refazer toda a alteração que fizemos da peça ao longo do jogo
 		
 	private void validateSourcePosition(Position position) {
 		if (!board.thereIsAPiece(position))/*caso não haja (!) uma posição na peça em que o usuario deseja mover, irá dar o seguinte erro:*/ {
 			throw new ChessException("There is no piece on source of position");
 		}
+		if(currentPlayer != ((ChessPiece)board.piece(position)).getColor()) {
+			//Foi necessario fazer um downcast por que:Color é da classe  ChessPiece, porém por sua vez ChessPiece é da Piece que é uma classe muito generica
+			throw new ChessException ("The chosen piece is not yours");
+		}
+		
+		if(!board.piece(position).isThereAnyPossibleMove())/*Caso não haja (!) movimento possivel para a peça fazer irá aparecer este erro*/ {
+			throw new ChessException("There is no possible moves for the chosen piece");
+		}
+	}
+	
+	private void validateTargetPosition(Position source, Position target) {
+		if(!board.piece(source).possibleMove(target)) {
+		//Se para a peça de origem não é um movimento de origem, então não é possivel mover para lá
+			throw new ChessException("The chosen piece can't move to target position");
+		}
+	}
+	
+	private void nextTurn(){
+		turn++;
+		currentPlayer = (currentPlayer == Color.WHITE) ? Color.BLACK : Color.WHITE;
+		// metodo para ir alternando conforme os turnos de um jogador para o outro
+	}
+	
+	private Color opponent (Color color) {
+		return (color == Color.WHITE) ? Color.BLACK : Color.WHITE;
+	}
+	
+	private ChessPiece king(Color color) {
+		List<Piece> list = piecesOnTheBoard.stream().filter(x -> ((ChessPiece)x).getColor() == color).collect(Collectors.toList());
+		for(Piece p : list) {
+			if (p instanceof King) {
+				return (ChessPiece)p;
+			}
+		}
+		throw new IllegalStateException("There is no " + color + " king on the board");
 	}
 	
 	private void placeNewPiece(char column, int row, ChessPiece piece) {
 		board.placePiece(piece, new ChessPosition(column, row).toPosition());
+		piecesOnTheBoard.add(piece);
 	}
 	
 	private void initialSetup() {
@@ -80,4 +167,7 @@ public class ChessMatch {
 		
 	}
 	//Definindo onde cada peça irá aparecee inicialmente junto a cor dela
+	
+	
+	
 }

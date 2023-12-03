@@ -6,6 +6,8 @@ package boardgame;
 public class Position {
 	private int row;
 	private int column;
+	
+	
 	public int getRow() {
 		return row;
 	}
@@ -25,6 +27,11 @@ public class Position {
 	
 	public Position() {
 		
+	}
+	
+	public void setValues(int row, int column) {
+		this.row = row;
+		this.column = column;
 	}
 	
 	
